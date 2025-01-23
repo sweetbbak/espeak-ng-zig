@@ -118,6 +118,9 @@ pub fn build(b: *std.Build) void {
     flags.append("-DCMAKE_C_FLAGS=-D_FILE_OFFSET_BITS=64") catch unreachable;
     flags.append("-DEXTRA_cmn=1") catch unreachable;
     flags.append("-DEXTRA_ru=1") catch unreachable;
+    // fixes error when passing Zig strings to espeak_SetVoiceByName etc...
+    // TODO: find out why (maybe its the strncpy0 fn)
+    flags.append("-fno-sanitize=undefined") catch unreachable;
 
     lib.addCSourceFiles(.{
         .root = espeak.path(""),
