@@ -6,7 +6,6 @@ pub fn build(b: *std.Build) void {
 
     const strip = b.option(bool, "strip", "Omit debug information");
     const pic = b.option(bool, "pie", "Produce Position Independent Code");
-
     // const use_mbrola = b.option(bool, "mbrola", "Use mbrola");
     // const use_libsonic = b.option(bool, "sonic", "Use libsonic");
     // const use_libpcaudio = b.option(bool, "pcaudio", "Use PCAUDIO");
@@ -87,7 +86,6 @@ pub fn build(b: *std.Build) void {
         .HAVE_WORKING_VFORK = 1,
     });
 
-    _ = config_h;
     // lib.addConfigHeader(config_h);
     const _config_h = b.addConfigHeader(.{
         .include_path = "config.h",
@@ -103,7 +101,9 @@ pub fn build(b: *std.Build) void {
         .VERSION = "1.52.0",
         .LT_OBJDIR = ".libs/",
     });
-    lib.addConfigHeader(_config_h);
+
+    _ = _config_h;
+    lib.addConfigHeader(config_h);
 
     var flags = std.ArrayList([]const u8).init(b.allocator);
     defer flags.deinit();
@@ -132,11 +132,14 @@ pub fn build(b: *std.Build) void {
     lib.addIncludePath(espeak.path("src/libespeak-ng"));
     lib.addIncludePath(espeak.path("src/ucd-tools/src/include"));
     lib.addIncludePath(espeak.path("src/speechPlayer/src"));
-
-    // lib.linkSystemLibrary("pthread");
     lib.linkLibC();
-    b.installArtifact(lib);
 
+    switch (optimize) {
+        .Debug, .ReleaseSafe => lib.bundle_compiler_rt = true,
+        .ReleaseFast, .ReleaseSmall => {},
+    }
+
+    b.installArtifact(lib);
     lib.installHeadersDirectory(espeak.path("src/include/espeak-ng"), "", .{});
 }
 
